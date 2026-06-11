@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="沉浸式人文旅游目的地 — 动态主题、时间轴、Bento Box 攻略、风物图志">
+<meta name="theme-color" content="#1a1410">
+<title>目的地 | 清寰纪行</title>
+<link rel="stylesheet" href="css/base.css">
+
+<style>
+  /* ═══ Parallax Hero ═══ */
+  .dest-hero {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end; text-align: center;
+    position: relative; overflow: hidden;
+    padding: var(--space-2xl) var(--space-md) var(--space-xl);
+  }
+  .dest-hero__bg {
+    position: absolute; inset: -20%; z-index: 0;
+    background-size: cover; background-position: center;
+    opacity: 0.5; filter: saturate(0.7) brightness(1.1);
+    will-change: transform; transition: transform 0.1s linear;
+  }
+  .dest-hero__overlay {
+    position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(to top, var(--color-bg) 0%, transparent 60%),
+                linear-gradient(to bottom, var(--color-bg) 0%, transparent 40%);
+  }
+  .dest-hero__content { position: relative; z-index: 2; max-width: var(--content-narrow); animation: heroReveal 1.2s var(--ease-out-expo) both; padding-bottom: var(--space-xl); }
+  .dest-hero__flag { font-size: 3rem; margin-bottom: var(--space-sm); display: block; }
+  .dest-hero__name { font-family: var(--font-display); font-size: clamp(2.8rem, 8vw, 6rem); font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: var(--color-ink); margin-bottom: var(--space-sm); }
+  .dest-hero__local { font-family: var(--font-display); font-size: clamp(1.2rem, 2.5vw, 1.8rem); color: var(--color-muted); margin-bottom: var(--space-md); }
+  .dest-hero__tagline { font-family: var(--font-display); font-size: clamp(1.2rem, 3vw, 2rem); font-weight: 700; color: var(--color-primary); margin-bottom: var(--space-md); font-style: italic; }
+  .dest-hero__desc { font-size: clamp(0.95rem, 1.5vw, 1.15rem); color: var(--color-muted); max-width: 60ch; margin-inline: auto; line-height: 1.8; }
+  .dest-hero__actions { display: flex; gap: var(--space-sm); justify-content: center; flex-wrap: wrap; margin-top: var(--space-lg); }
+  .dest-hero__stats { display: flex; gap: var(--space-lg); justify-content: center; flex-wrap: wrap; margin-top: var(--space-lg); }
+  .dest-stat { text-align: center; }
+  .dest-stat__num { font-family: var(--font-display); font-size: 1.8rem; font-weight: 900; color: var(--color-accent); }
+  .dest-stat__label { font-size: 0.75rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* ═══ Section Nav Dots ═══ */
+  .section-nav {
+    position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+    z-index: var(--z-sticky); display: flex; flex-direction: column; gap: 12px;
+  }
+  .section-nav__dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--color-muted); opacity: 0.4;
+    cursor: pointer; transition: all 0.3s; border: none;
+  }
+  .section-nav__dot--active { opacity: 1; background: var(--color-primary); transform: scale(1.4); }
+  .section-nav__dot:hover { opacity: 0.8; }
+  .section-nav__label {
+    position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+    background: var(--color-surface-elevated); color: var(--color-ink);
+    padding: 4px 12px; border-radius: 100px; font-size: 0.72rem;
+    white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.2s;
+  }
+  .section-nav__dot:hover + .section-nav__label { opacity: 1; }
+
+  /* ═══ Lightbox ═══ */
+  .lightbox {
+    position: fixed; inset: 0; z-index: var(--z-modal);
+    background: rgba(0,0,0,0.92); display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    backdrop-filter: blur(10px);
+  }
+  .lightbox--open { opacity: 1; pointer-events: auto; }
+  .lightbox__img { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 4px; transform: scale(0.9); transition: transform 0.3s var(--ease-out-expo); }
+  .lightbox--open .lightbox__img { transform: scale(1); }
+  .lightbox__close {
+    position: absolute; top: 20px; right: 20px;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; font-size: 1.3rem; cursor: pointer; transition: background 0.2s;
+  }
+  .lightbox__close:hover { background: rgba(255,255,255,0.2); }
+  .lightbox__nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 48px; height: 48px; border-radius: 50%;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+    color: #fff; font-size: 1.2rem; cursor: pointer; transition: background 0.2s;
+  }
+  .lightbox__nav:hover { background: rgba(255,255,255,0.18); }
+  .lightbox__nav--prev { left: 20px; }
+  .lightbox__nav--next { right: 20px; }
+  .lightbox__counter { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.6); font-size: 0.85rem; }
+
+  /* ═══ Section Spacing ═══ */
+  .section { padding: var(--space-2xl) 0; position: relative; z-index: 1; }
+  .routes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--bento-gap); }
+  .foods-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--bento-gap); }
+  .heritage-list { max-width: var(--content-narrow); margin-inline: auto; }
+  .gallery-grid { columns: 3 280px; column-gap: var(--bento-gap); }
+  .gallery-grid__item {
+    break-inside: avoid; margin-bottom: var(--bento-gap);
+    border-radius: var(--bento-radius); overflow: hidden; cursor: pointer;
+    transition: transform 0.4s var(--ease-out-expo), filter 0.4s;
+    filter: brightness(0.85);
+  }
+  .gallery-grid__item:hover { transform: scale(1.02); filter: brightness(1.05); }
+  .gallery-grid__item img { width: 100%; display: block; }
+
+  /* ═══ Heritage Card ═══ */
+  .heritage-card {
+    padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-md);
+    border-radius: var(--bento-radius); background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border);
+    transition: border-color 0.4s, transform 0.3s;
+  }
+  .heritage-card:hover { border-color: var(--color-primary); transform: translateX(4px); }
+  .heritage-card__title { color: var(--color-primary); font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; margin-bottom: var(--space-xs); }
+  .heritage-card__story { color: var(--color-muted); font-size: 0.92rem; line-height: 1.75; }
+  .heritage-card__img { width: 100%; border-radius: calc(var(--bento-radius) * 0.7); margin-top: var(--space-sm); opacity: 0.55; transition: opacity 0.4s; }
+  .heritage-card:hover .heritage-card__img { opacity: 0.8; }
+
+  /* ═══ Timeline Enhanced ═══ */
+  .timeline-enhanced {
+    display: flex; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory;
+    padding: var(--space-lg) 0; position: relative;
+  }
+  .timeline-enhanced::before {
+    content: ''; position: absolute; left: 0; right: 0; top: 55px; height: 2px;
+    background: linear-gradient(to right, var(--color-primary), var(--color-accent), var(--color-primary));
+    opacity: 0.3;
+  }
+  .timeline-node {
+    scroll-snap-align: start; min-width: 220px; flex-shrink: 0;
+    text-align: center; position: relative; padding: 0 var(--space-sm);
+  }
+  .timeline-node__dot {
+    width: 14px; height: 14px; border-radius: 50%; background: var(--color-primary);
+    margin: 48px auto var(--space-sm); position: relative; z-index: 1;
+    box-shadow: 0 0 16px var(--color-primary);
+  }
+  .timeline-node__year { font-family: var(--font-display); font-size: 1.5rem; font-weight: 900; color: var(--color-primary); }
+  .timeline-node__event { font-size: 0.85rem; color: var(--color-ink); margin-top: 4px; line-height: 1.4; }
+
+  @media (max-width: 768px) {
+    .section-nav { display: none; }
+    .dest-hero__name { font-size: clamp(2rem, 8vw, 3rem); }
+    .gallery-grid { columns: 2 180px; }
+    .routes-grid, .foods-grid { grid-template-columns: 1fr; }
+    .lightbox__nav { width: 36px; height: 36px; }
+  }
+
+  @media (max-width: 480px) {
+    .gallery-grid { columns: 1; }
+    .timeline-node { min-width: 180px; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#guide" class="skip-link">跳转到攻略</a>
+<a href="#gallery" class="skip-link" style="left:170px">跳转到图志</a>
+
+<nav class="nav" aria-label="主导航">
+  <div class="nav__inner">
+    <a href="index.html" class="nav__logo" style="font-size:1.4rem;letter-spacing:0.04em;background:linear-gradient(135deg,var(--color-primary),var(--color-accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">🌐 清寰纪行 <span style="font-size:0.65rem;font-weight:400;-webkit-text-fill-color:var(--color-muted);background:none;margin-left:4px">Lucent Voyage</span></a>
+    <ul class="nav__links">
+      <li><a href="index.html" style="display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border-radius:100px;background:var(--color-primary);color:#fff;font-weight:500;font-size:0.85rem;transition:all 0.3s">← 探索中枢</a></li>
+      <li><a href="#guide">攻略</a></li>
+      <li><a href="#stories">故事</a></li>
+      <li><a href="#gallery">图志</a></li>
+    </ul>
+    <button class="hamburger" id="hamburger-btn" aria-label="菜单" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+  <a href="index.html">🏠 探索中枢</a>
+  <a href="#guide">📋 实用攻略</a>
+  <a href="#stories">📖 在地故事</a>
+  <a href="#gallery">🖼️ 风物图志</a>
+  <a href="#foods-sec">🍽️ 在地食单</a>
+</div>
+
+<nav class="mobile-tabs" aria-label="移动端导航">
+  <a href="index.html" class="mobile-tabs__item"><span>🏠</span>中枢</a>
+  <a href="#guide" class="mobile-tabs__item"><span>📋</span>攻略</a>
+  <a href="#stories" class="mobile-tabs__item"><span>📖</span>故事</a>
+  <a href="#gallery" class="mobile-tabs__item"><span>🖼️</span>图志</a>
+</nav>
+
+<!-- Section Navigation Dots -->
+<nav class="section-nav" id="section-nav" aria-label="页面导航">
+  <button class="section-nav__dot section-nav__dot--active" data-target="hero" aria-label="概览"></button>
+  <button class="section-nav__dot" data-target="routes" aria-label="路线"></button>
+  <button class="section-nav__dot" data-target="guide" aria-label="攻略"></button>
+  <button class="section-nav__dot" data-target="foods-sec" aria-label="美食"></button>
+  <button class="section-nav__dot" data-target="stories" aria-label="故事"></button>
+  <button class="section-nav__dot" data-target="tips-sec" aria-label="贴士"></button>
+  <button class="section-nav__dot" data-target="gallery" aria-label="图志"></button>
+</nav>
+
+<main class="page-transition">
+  <!-- ═══ Hero ═══ -->
+  <header class="dest-hero" id="hero">
+    <div class="dest-hero__bg" id="hero-bg" role="img" aria-label="目的地全景"></div>
+    <div class="dest-hero__overlay"></div>
+    <div class="dest-hero__content">
+      <span class="dest-hero__flag" data-field="flag"></span>
+      <h1 class="dest-hero__name" data-field="nameCN">目的地</h1>
+      <p class="dest-hero__local" data-field="nameLocal"></p>
+      <p class="dest-hero__tagline" data-field="tagline"></p>
+      <p class="dest-hero__desc" data-field="desc"></p>
+      <div class="dest-hero__actions">
+        <a href="#guide" class="btn btn--primary">📋 实用攻略</a>
+        <a href="#stories" class="btn btn--ghost">📖 在地故事</a>
+        <button class="btn btn--ghost" id="fav-toggle-btn" aria-label="收藏此目的地">🤍 收藏</button>
+        <button class="btn btn--ghost" id="share-btn" aria-label="分享此页面">🔗 分享</button>
+      </div>
+      <div class="dest-hero__stats">
+        <div class="dest-stat"><div class="dest-stat__num" data-field="stats.annualVisitors">—</div><div class="dest-stat__label">年游客量</div></div>
+        <div class="dest-stat"><div class="dest-stat__num" data-field="stats.bestSeason">—</div><div class="dest-stat__label">最佳季节</div></div>
+        <div class="dest-stat"><div class="dest-stat__num" data-field="stats.unesco">—</div><div class="dest-stat__label">UNESCO</div></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ Timeline ═══ -->
+  <section class="section" id="timeline-sec">
+    <div class="container">
+      <div class="section__header">
+        <div class="section__label">History</div>
+        <h2 class="section__title">历史长河</h2>
+        <p class="section__desc">横向滑动，穿越时光——每座城市都是一部层层叠压的编年史。</p>
+      </div>
+      <div class="timeline-enhanced" id="timeline" aria-label="历史时间轴"></div>
+    </div>
+  </section>
+
+  <!-- ═══ Routes ═══ -->
+  <section class="section" id="routes">
+    <div class="container">
+      <div class="section__header">
+        <div class="section__label">Explore</div>
+        <h2 class="section__title">精选路线</h2>
+        <p class="section__desc">从经典巡礼到秘境探索，每一条路线都经过在地打磨。</p>
+      </div>
+      <div id="routes-list" class="routes-grid"><div class="loader"></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ Bento Guide ═══ -->
+  <section class="section" id="guide">
+    <div class="container">
+      <div class="section__header">
+        <div class="section__label">Guide</div>
+        <h2 class="section__title">实用行囊</h2>
+        <p class="section__desc">天气、季节、节日——你需要的一切，封装在便当盒中。</p>
+      </div>
+      <div id="bento-guide" class="bento-grid"><div class="loader" style="grid-column:1/-1"></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ Foods ═══ -->
+  <section class="section" id="foods-sec">
+    <div class="container">
+      <div class="section__header">
+        <div class="section__label">Taste</div>
+        <h2 class="section__title">在地食单</h2>
+        <p class="section__desc">味觉是理解一座城市最直接的方式。</p>
+      </div>
+      <div id="foods-list" class="foods-grid"><div class="loader"></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ Heritage Stories ═══ -->
+  <section class="section" id="stories">
+    <div class="container">
+      <div class="section__header">
+        <div class="section__label">Heritage</div>
+        <h2 class="section__title">在地故事</h2>
+        <p class="section__desc">非遗传承、在地口述、被遗忘的角落——这些故事让一座城有了心跳。</p>
+      </div>
+      <div id="heritage-list" class="heritage-list"><div class="loader"></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ Travel Tips + Nearby ═══ -->
+  <section class="section reveal" id="tips-sec">
+    <div class="container">
+      <div class="section__header">
+        <div class="section__label">Tips</div>
+        <h2 class="section__title">旅行贴士 & 周边推荐</h2>
+      </div>
+      <div id="tips-grid" class="bento-grid"><div class="loader"></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ Gallery ═══ -->
+  <section class="section" id="gallery">
+    <div class="container">
+      <div class="section__header">
+        <div class="section__label">Gallery</div>
+        <h2 class="section__title">风物图志</h2>
+        <p class="section__desc">4K 级高清摄影，瀑布流呈现。点击任意照片进入全屏浏览。</p>
+      </div>
+      <div id="gallery-grid" class="gallery-grid"></div>
+    </div>
+  </section>
+</main>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <button class="lightbox__close" aria-label="关闭">✕</button>
+  <button class="lightbox__nav lightbox__nav--prev" aria-label="上一张">‹</button>
+  <img class="lightbox__img" id="lightbox-img" src="" alt="">
+  <button class="lightbox__nav lightbox__nav--next" aria-label="下一张">›</button>
+  <div class="lightbox__counter" id="lightbox-counter"></div>
+</div>
+
+<footer class="footer">
+  <p><a href="index.html">← 返回探索中枢</a></p>
+  <p style="margin-top:var(--space-sm);font-size:0.95rem"><span style="background:linear-gradient(135deg,var(--color-primary),var(--color-accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700">🌐 清寰纪行</span> ・ Lucent Voyage</p>
+  <p style="margin-top:6px;font-size:0.8rem;color:var(--color-muted)">web designer 龚玉婷</p>
+</footer>
+
+<script src="js/destinations.js"></script>
+<script src="js/destinations-part2.js"></script>
+<script>
+  window.DESTINATIONS = (window.DESTINATIONS || []).concat(window.DESTINATIONS_PART2 || []);
+</script>
+<script src="js/theme-engine.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/images.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════
+   Destination Sub-Page — Enhanced
+   ═══════════════════════════════════════════════════ */
+
+const SubPage = {
+  _dest: null,
+  _lightboxIdx: 0,
+  _galleryImages: [],
+
+  init() {
+    try {
+    const destId = new URLSearchParams(window.location.search).get('dest') || 'dunhuang';
+    this._dest = window.DESTINATIONS?.find(d => d.id === destId);
+
+    if (!this._dest) {
+      document.body.innerHTML = '<div class=\"hub-hero\" style=\"min-height:60vh\"><div class=\"hub-hero__content\"><h1>目的地未找到</h1><p style=\"color:var(--color-muted)\">ID: ' + destId + '</p><p><a href=\"index.html\" class=\"btn btn--primary\">返回探索中枢</a></p></div></div>';
+      return;
+    }
+
+    const d = this._dest;
+
+    // Theme
+    if (window.ThemeEngine) ThemeEngine.apply(d);
+    document.title = d.nameCN + ' — ' + (d.tagline || '人文旅游') + ' | 清寰纪行';
+
+    // Hero BG
+    const heroBg = document.getElementById('hero-bg');
+    if (heroBg) {
+      heroBg.style.backgroundImage = 'url(https://picsum.photos/seed/' + d.id + '-hero/1920/1080)';
+      heroBg.style.backgroundSize = 'cover';
+      heroBg.style.backgroundPosition = 'center';
+    }
+
+    // Text fields
+    document.querySelectorAll('[data-field]').forEach(el => {
+      const keys = el.dataset.field.split('.');
+      let val = d;
+      for (const k of keys) val = val?.[k];
+      if (val !== undefined && val !== null && val !== '') {
+        el.textContent = typeof val === 'object' ? JSON.stringify(val) : val;
+      }
+    });
+
+    // ── Parallax ──
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && heroBg) {
+      window.addEventListener('scroll', () => {
+        const s = window.scrollY;
+        if (s < window.innerHeight) {
+          heroBg.style.transform = 'translateY(' + (s * 0.35) + 'px) scale(' + (1 + s * 0.0003) + ')';
+        }
+      }, { passive: true });
+    }
+
+    this._renderRoutes();
+    this._renderBentoGuide();
+    this._renderFoods();
+    this._renderHeritage();
+    this._renderGallery();
+    this._renderTimeline();
+    this._renderTips();
+    this._setupLightbox();
+    this._setupSectionNav();
+    this._setupNavScroll();
+    this._setupShare();
+    this._setupFavToggle();
+    this._setupScrollReveal();
+    this._setupMobileMenu();
+
+    if (window.Storage) Storage.addRecent(d.id);
+    } catch(e) { console.error('SubPage init error:', e); }
+  },
+
+  _renderTimeline() {
+    const el = document.getElementById('timeline');
+    if (!el) return;
+    const d = this._dest;
+    const nodes = [];
+    if (d.stats?.unesco) nodes.push({ y: d.stats.unesco + '年', event: '列入 UNESCO 世界遗产名录' });
+    if (d.stats?.annualVisitors) nodes.push({ y: '今日', event: '年游客量达 ' + d.stats.annualVisitors });
+    nodes.push({ y: '永远', event: (d.keywords || []).slice(0, 3).join(' · ') });
+    if (!nodes.length) { el.innerHTML = '<div class="timeline-node"><div class="timeline-node__dot"></div><div class="timeline-node__year">∞</div><div class="timeline-node__event">时光在此处流动</div></div>'; return; }
+
+    el.innerHTML = nodes.map(n =>
+      '<div class="timeline-node">' +
+        '<div class="timeline-node__dot"></div>' +
+        '<div class="timeline-node__year">' + n.y + '</div>' +
+        '<div class="timeline-node__event">' + n.event + '</div>' +
+      '</div>'
+    ).join('');
+  },
+
+  _renderRoutes() {
+    const el = document.getElementById('routes-list');
+    if (!el) return;
+    if (!this._dest.routes?.length) { el.innerHTML = '<p style=\"color:var(--color-muted);text-align:center;padding:var(--space-md)\">路线数据整理中…</p>'; return; }
+    el.innerHTML = this._dest.routes.map((r, i) =>
+      '<div class="bento-card bento-card--1x1" style="animation:heroReveal 0.6s var(--ease-out-expo) ' + (i * 0.1) + 's both">' +
+        '<span class="bento-card__icon">🗺️</span>' +
+        '<span class="bento-card__title">' + r.name + '</span>' +
+        '<span style="color:var(--color-primary);font-size:0.78rem">' + r.days + '天</span>' +
+        '<p style="color:var(--color-muted);font-size:0.82rem;margin-top:6px">' + (r.highlights || []).join(' · ') + '</p>' +
+      '</div>'
+    ).join('');
+  },
+
+  _renderBentoGuide() {
+    const el = document.getElementById('bento-guide');
+    if (!el) return;
+    const d = this._dest;
+
+    let festivalsHTML = '';
+    if (d.festivals?.length) {
+      festivalsHTML = d.festivals.map((f, i) =>
+        '<div class="bento-card" style="animation:heroReveal 0.5s var(--ease-out-expo) ' + (0.3 + i * 0.1) + 's both">' +
+          '<div class="bento-card__icon">🎉</div><div class="bento-card__title">' + f.name + '</div>' +
+          '<div class="bento-card__content" style="font-size:0.78rem">' + f.month + '月 · ' + f.desc + '</div>' +
+        '</div>'
+      ).join('');
+    }
+
+    el.innerHTML =
+      '<div class="bento-card bento-card--2x1" id="weather-card">' +
+        '<div class="bento-card__icon">🌤️</div><div class="bento-card__title">实时天气</div>' +
+        '<div class="bento-card__content" id="weather-data"><div class="loader" style="width:18px;height:18px;margin:6px 0"></div></div>' +
+      '</div>' +
+      '<div class="bento-card"><div class="bento-card__icon">📅</div><div class="bento-card__title">最佳季节</div><div class="bento-card__content">' + (d.stats?.bestSeason || '全年') + '</div></div>' +
+      '<div class="bento-card"><div class="bento-card__icon">👥</div><div class="bento-card__title">年游客量</div><div class="bento-card__content">' + (d.stats?.annualVisitors || '—') + '</div></div>' +
+      '<div class="bento-card"><div class="bento-card__icon">🏛️</div><div class="bento-card__title">UNESCO 世界遗产</div><div class="bento-card__content">' + (d.stats?.unesco ? d.stats.unesco + ' 年列入' : '—') + '</div></div>' +
+      festivalsHTML;
+
+    this._fetchWeather();
+  },
+
+  _renderFoods() {
+    const el = document.getElementById('foods-list');
+    if (!el) return;
+    if (!this._dest.foods?.length) { el.innerHTML = '<p style=\"color:var(--color-muted);text-align:center;padding:var(--space-md)\">美食数据整理中…</p>'; return; }
+    el.innerHTML = this._dest.foods.map((f, i) =>
+      '<div class="bento-card" style="animation:heroReveal 0.5s var(--ease-out-expo) ' + (i * 0.08) + 's both">' +
+        '<div class="bento-card__icon">🍽️</div>' +
+        '<div class="bento-card__title">' + f.name + '</div>' +
+        '<span style="color:var(--color-primary);font-size:0.72rem">' + f.type + '</span>' +
+        '<p style="color:var(--color-muted);font-size:0.8rem;margin-top:4px">' + f.desc + '</p>' +
+      '</div>'
+    ).join('');
+  },
+
+  _renderHeritage() {
+    const el = document.getElementById('heritage-list');
+    if (!el) return;
+    if (!this._dest.heritage?.length) { el.innerHTML = '<p style=\"color:var(--color-muted);text-align:center;padding:var(--space-md)\">故事数据整理中…</p>'; return; }
+    el.innerHTML = this._dest.heritage.map((h, i) =>
+      '<article class="heritage-card reveal" style="animation-delay:' + (i * 0.15) + 's">' +
+        '<h4 class="heritage-card__title">' + h.title + '</h4>' +
+        '<p class="heritage-card__story">' + h.story + '</p>' +
+        '<div class="heritage-card__img" style="height:140px;border-radius:calc(var(--bento-radius)*0.7);margin-top:var(--space-sm);overflow:hidden;position:relative;background:linear-gradient(120deg,' + (this._dest.theme||{}).accent + ',' + (this._dest.theme||{}).bg + ')">' +
+          '<img src="https://picsum.photos/seed/' + this._dest.id + '-story/800/400" alt="" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.35" onerror="this.remove()">' +
+        '</div>' +
+      '</article>'
+    ).join('');
+  },
+
+  _renderGallery() {
+    const el = document.getElementById('gallery-grid');
+    if (!el) return;
+
+    // Gallery: loremflickr real photos with Canvas fallback
+    const ratios = ['3/4','1/1','4/3','3/4','1/1','4/3'];
+    this._galleryImages = [];
+
+    el.innerHTML = [0,1,2,3,4,5].map(i => {
+      const size = ratios[i] === '4/3' ? '800/600' : ratios[i] === '3/4' ? '600/800' : '600/600';
+      const imgUrl = 'https://picsum.photos/seed/' + this._dest.id + '-g' + i + '/' + size;
+      this._galleryImages.push(imgUrl);
+      return '<div class="gallery-grid__item reveal" data-idx="' + i + '" style="animation-delay:' + (i * 0.08) + 's">' +
+        '<img src="' + imgUrl + '" alt="' + this._dest.nameCN + '" style="width:100%;aspect-ratio:' + ratios[i] + ';object-fit:cover;border-radius:var(--bento-radius)" loading="lazy" onerror="this.src=\'' + AtlasImage.gallery(this._dest, i) + '\'">' +
+      '</div>';
+    }).join('');
+
+    // Click to open lightbox
+    el.querySelectorAll('.gallery-grid__item').forEach(item => {
+      item.addEventListener('click', () => {
+        this._lightboxIdx = parseInt(item.dataset.idx);
+        this._openLightbox();
+      });
+    });
+  },
+
+  /* ── Lightbox ── */
+  _setupLightbox() {
+    const lb = document.getElementById('lightbox');
+    if (!lb) return;
+
+    lb.querySelector('.lightbox__close').addEventListener('click', () => this._closeLightbox());
+    lb.querySelector('.lightbox__nav--prev').addEventListener('click', () => { this._lightboxIdx = (this._lightboxIdx - 1 + this._galleryImages.length) % this._galleryImages.length; this._openLightbox(); });
+    lb.querySelector('.lightbox__nav--next').addEventListener('click', () => { this._lightboxIdx = (this._lightboxIdx + 1) % this._galleryImages.length; this._openLightbox(); });
+    lb.addEventListener('click', e => { if (e.target === lb) this._closeLightbox(); });
+
+    document.addEventListener('keydown', e => {
+      if (!lb.classList.contains('lightbox--open')) return;
+      if (e.key === 'Escape') this._closeLightbox();
+      if (e.key === 'ArrowLeft') { this._lightboxIdx = (this._lightboxIdx - 1 + this._galleryImages.length) % this._galleryImages.length; this._openLightbox(); }
+      if (e.key === 'ArrowRight') { this._lightboxIdx = (this._lightboxIdx + 1) % this._galleryImages.length; this._openLightbox(); }
+    });
+  },
+
+  _openLightbox() {
+    const lb = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    const counter = document.getElementById('lightbox-counter');
+    if (!lb || !img || !this._galleryImages.length) return;
+    img.src = this._galleryImages[this._lightboxIdx];
+    img.style.cssText = 'max-width:90vw;max-height:85vh;object-fit:contain;border-radius:4px';
+    img.textContent = '';
+    counter.textContent = (this._lightboxIdx + 1) + ' / ' + this._galleryImages.length;
+    lb.classList.add('lightbox--open');
+    lb.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  },
+
+  _closeLightbox() {
+    const lb = document.getElementById('lightbox');
+    if (!lb) return;
+    lb.classList.remove('lightbox--open');
+    lb.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  },
+
+  /* ── Section Nav Dots ── */
+  _setupSectionNav() {
+    const nav = document.getElementById('section-nav');
+    if (!nav || window.matchMedia('(max-width: 768px)').matches) return;
+
+    const dots = nav.querySelectorAll('.section-nav__dot');
+    const sections = [];
+    dots.forEach(dot => {
+      const id = dot.dataset.target;
+      const el = document.getElementById(id);
+      if (el) sections.push({ id, el, dot });
+    });
+
+    // Click to scroll
+    dots.forEach(dot => {
+      dot.addEventListener('click', () => {
+        const el = document.getElementById(dot.dataset.target);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // Scroll spy
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          dots.forEach(d => d.classList.remove('section-nav__dot--active'));
+          const active = nav.querySelector('[data-target="' + entry.target.id + '"]');
+          if (active) active.classList.add('section-nav__dot--active');
+        }
+      });
+    }, { threshold: 0.3 });
+
+    sections.forEach(s => observer.observe(s.el));
+  },
+
+  /* ── Travel Tips & Nearby ── */
+  _renderTips() {
+    const el = document.getElementById('tips-grid');
+    if (!el) return;
+    const d = this._dest;
+
+    // Compute nearby destinations (within ~15 degrees lat/lng)
+    const all = window.DESTINATIONS || [];
+    const nearby = all
+      .filter(o => o.id !== d.id)
+      .map(o => ({
+        dest: o,
+        dist: Math.hypot((o.lat || 0) - (d.lat || 0), (o.lng || 0) - (d.lng || 0))
+      }))
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, 3);
+
+    // Travel tips from country
+    const tips = {
+      'China': { visa: '中国公民无需签证', currency: '人民币 (CNY) ¥', lang: '中文普通话', tz: 'UTC+8' },
+      'Japan': { visa: '需提前办理签证', currency: '日元 (JPY) ¥', lang: '日语', tz: 'UTC+9' },
+      'France': { visa: '申根签证', currency: '欧元 (EUR) €', lang: '法语', tz: 'UTC+1/UTC+2' },
+      'Italy': { visa: '申根签证', currency: '欧元 (EUR) €', lang: '意大利语', tz: 'UTC+1/UTC+2' },
+      'Spain': { visa: '申根签证', currency: '欧元 (EUR) €', lang: '西班牙语', tz: 'UTC+1/UTC+2' },
+      'United Kingdom': { visa: '英国签证（非申根）', currency: '英镑 (GBP) £', lang: '英语', tz: 'UTC+0/UTC+1' },
+      'United States': { visa: '需办理签证/ESTA', currency: '美元 (USD) $', lang: '英语', tz: 'UTC-5 至 UTC-8' },
+      'Thailand': { visa: '免签30天（中国护照）', currency: '泰铢 (THB) ฿', lang: '泰语', tz: 'UTC+7' },
+      'Indonesia': { visa: '免签30天', currency: '印尼盾 (IDR) Rp', lang: '印尼语', tz: 'UTC+8' },
+      'India': { visa: '电子签证 (e-Visa)', currency: '印度卢比 (INR) ₹', lang: '印地语/英语', tz: 'UTC+5:30' },
+      'Turkey': { visa: '电子签证', currency: '土耳其里拉 (TRY) ₺', lang: '土耳其语', tz: 'UTC+3' },
+      'Morocco': { visa: '免签90天（中国护照）', currency: '摩洛哥迪拉姆 (MAD)', lang: '阿拉伯语/法语', tz: 'UTC+1' },
+      'Peru': { visa: '持美/申根签免签', currency: '秘鲁索尔 (PEN) S/', lang: '西班牙语', tz: 'UTC-5' },
+      'Brazil': { visa: '需提前办理签证', currency: '巴西雷亚尔 (BRL) R$', lang: '葡萄牙语', tz: 'UTC-3' },
+      'South Africa': { visa: '电子签证 (e-Visa)', currency: '兰特 (ZAR) R', lang: '英语等11种', tz: 'UTC+2' },
+      'Tanzania': { visa: '落地签/电子签', currency: '坦桑尼亚先令 (TZS)', lang: '斯瓦希里语/英语', tz: 'UTC+3' },
+      'Egypt': { visa: '落地签25美元', currency: '埃及镑 (EGP) £', lang: '阿拉伯语', tz: 'UTC+2' },
+      'Australia': { visa: '电子签证 (ETA/eVisitor)', currency: '澳元 (AUD) $', lang: '英语', tz: 'UTC+10' },
+      'Vietnam': { visa: '电子签证', currency: '越南盾 (VND) ₫', lang: '越南语', tz: 'UTC+7' },
+      'South Korea': { visa: '免签（济州岛）/ 需签证（本土）', currency: '韩元 (KRW) ₩', lang: '韩语', tz: 'UTC+9' },
+      'Maldives': { visa: '免签30天', currency: '拉菲亚 (MVR) / 美元通用', lang: '迪维希语/英语', tz: 'UTC+5' },
+      'Mexico': { visa: '持美签免签', currency: '墨西哥比索 (MXN) $', lang: '西班牙语', tz: 'UTC-6' },
+    };
+
+    const info = tips[d.country] || { visa: '请查询最新签证政策', currency: '当地货币', lang: '本地语言', tz: d.weather?.tz || '—' };
+
+    el.innerHTML =
+      '<div class="bento-card bento-card--2x1">' +
+        '<div class="bento-card__icon">🛂</div>' +
+        '<div class="bento-card__title">签证信息</div>' +
+        '<div class="bento-card__content">' + info.visa + '</div>' +
+      '</div>' +
+      '<div class="bento-card">' +
+        '<div class="bento-card__icon">💱</div>' +
+        '<div class="bento-card__title">货币</div>' +
+        '<div class="bento-card__content">' + info.currency + '</div>' +
+      '</div>' +
+      '<div class="bento-card">' +
+        '<div class="bento-card__icon">🗣️</div>' +
+        '<div class="bento-card__title">语言</div>' +
+        '<div class="bento-card__content">' + info.lang + '</div>' +
+      '</div>' +
+      '<div class="bento-card">' +
+        '<div class="bento-card__icon">🕐</div>' +
+        '<div class="bento-card__title">时区</div>' +
+        '<div class="bento-card__content">' + info.tz + '</div>' +
+      '</div>' +
+      (nearby.length ? '<div class="bento-card bento-card--full" style="margin-top:0"><div class="bento-card__icon">🗺️</div><div class="bento-card__title">周边推荐目的地</div><div class="featured-bar" style="padding:8px 0">' +
+        nearby.map(n => {
+          const country = n.dest.countryCN || n.dest.country || '';
+          return '<button class="nearby-chip" onclick="window.location.href=\'destination.html?dest=' + n.dest.id + '\'" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:100px;border:1px solid var(--glass-border);background:var(--color-surface);color:var(--color-ink);cursor:pointer;font-size:0.88rem;transition:all 0.3s;white-space:nowrap;margin:4px" onmouseover="this.style.borderColor=\'var(--color-primary)\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.borderColor=\'var(--glass-border)\';this.style.transform=\'\'">' +
+            '<span style="font-size:1.3rem">' + (n.dest.flag || '🌍') + '</span>' +
+            '<span style="font-weight:600">' + n.dest.nameCN + '</span>' +
+            '<span style="color:var(--color-muted);font-size:0.7rem">' + country + '</span>' +
+          '</button>';
+        }).join('') +
+      '</div></div>' : '');
+  },
+
+  /* ── Weather ── */
+  async _fetchWeather() {
+    const d = this._dest;
+    const el = document.getElementById('weather-data');
+    if (!d.weather) { if (el) el.innerHTML = '<span style=\"color:var(--color-muted);font-size:0.78rem\">—</span>'; return; }
+    // Set timeout
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    try {
+      const resp = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + d.lat + '&longitude=' + d.lng + '&current=temperature_2m,weather_code&timezone=' + encodeURIComponent(d.weather.tz), { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!resp.ok) throw new Error('API error');
+      const data = await resp.json();
+      const t = Math.round(data.current.temperature_2m);
+      const code = data.current.weather_code;
+      const emoji = code <= 3 ? '☀️' : code <= 49 ? '🌥️' : code <= 59 ? '🌧️' : code <= 69 ? '❄️' : code <= 82 ? '🌧️' : '⛈️';
+      if (el) el.innerHTML = '<span style=\"font-size:1.4rem\">' + emoji + '</span> <strong style=\"font-size:1.1rem\">' + t + '°C</strong><br><span style=\"font-size:0.7rem;color:var(--color-muted)\">' + d.weather.city + '</span>';
+    } catch (e) {
+      clearTimeout(timer);
+      if (el) el.innerHTML = '<span style=\"color:var(--color-muted);font-size:0.78rem\">天气暂不可用</span>';
+    }
+  },
+
+  /* ── Mobile Menu ── */
+  _setupMobileMenu() {
+    const btn = document.getElementById('hamburger-btn');
+    const menu = document.getElementById('mobile-menu');
+    if (!btn || !menu) return;
+    btn.addEventListener('click', () => {
+      const open = menu.classList.toggle('mobile-menu--open');
+      btn.classList.toggle('hamburger--open', open);
+      btn.setAttribute('aria-expanded', open);
+      menu.setAttribute('aria-hidden', !open);
+      document.body.style.overflow = open ? 'hidden' : '';
+    });
+    menu.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        menu.classList.remove('mobile-menu--open');
+        btn.classList.remove('hamburger--open');
+        btn.setAttribute('aria-expanded', 'false');
+        menu.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      });
+    });
+  },
+
+  /* ── Favorite Toggle ── */
+  _setupFavToggle() {
+    const btn = document.getElementById('fav-toggle-btn');
+    if (!btn || !this._dest) return;
+    const id = this._dest.id;
+    const updateBtn = () => {
+      const isFav = window.Storage?.isFavorite(id);
+      btn.textContent = (isFav ? '❤️' : '🤍') + (isFav ? ' 已收藏' : ' 收藏');
+    };
+    updateBtn();
+    btn.addEventListener('click', () => {
+      window.Storage?.toggleFavorite(id);
+      updateBtn();
+      // Brief animation
+      btn.style.transform = 'scale(1.2)';
+      setTimeout(() => { btn.style.transform = ''; }, 200);
+    });
+  },
+
+  /* ── Share ── */
+  _setupShare() {
+    const btn = document.getElementById('share-btn');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const url = window.location.href;
+      if (navigator.share) {
+        navigator.share({ title: document.title, url });
+      } else {
+        navigator.clipboard.writeText(url).then(() => {
+          btn.textContent = '✓ 已复制';
+          setTimeout(() => { btn.textContent = '🔗 分享'; }, 2000);
+        }).catch(() => {});
+      }
+    });
+  },
+
+  /* ── Nav Scroll ── */
+  _setupNavScroll() {
+    window.addEventListener('scroll', () => {
+      document.querySelector('.nav')?.classList.toggle('nav--scrolled', window.scrollY > 50);
+    }, { passive: true });
+  },
+
+  /* ── Scroll Reveal ── */
+  _setupScrollReveal() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'opacity 0.7s ease-out, transform 0.7s ease-out';
+      observer.observe(el);
+    });
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => SubPage.init());
+</script>
+</body>
+</html>

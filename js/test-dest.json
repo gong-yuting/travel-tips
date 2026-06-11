@@ -1,0 +1,21 @@
+[
+  {
+    "id": "paris",
+    "name": "Paris",
+    "nameCN": "巴黎",
+    "country": "France",
+    "countryCN": "法国",
+    "flag": "🇫🇷",
+    "region": "europe",
+    "lat": 48.86,
+    "lng": 2.35,
+    "theme": "{bg:\"oklch(0.06 0.005 40)\",surface:\"oklch(0.11 0.010 35)\",surfaceElevated:\"oklch(0.16 0.015 32)\",primary:\"oklch(0.52 0.18 55)\",accent:\"oklch(0.48 0.12 280)\",secondary:\"oklch(0.50 0.20 20)\",ink:\"oklch(0.93 0.004 50)\",muted:\"oklch(0.56 0.016 45)\",glassBg:\"rgba(12,8,5,0.58)\",glassBorder:\"rgba(200,150,80,0.20)\",strategy:\"committed\"}",
+    "typography": "{display:\"Playfair Display\",body:\"Inter\",displayW:700,bodyW:400,scale:1.3}",
+    "symbols": "[\"埃菲尔铁塔\",\"卢浮宫\",\"塞纳河\",\"圣母院\",\"蒙马特\",\"咖啡馆\"]",
+    "heroImage": "photo-1502602898657-3e91760cbb34",
+    "weather": "{city:\"Paris\",country:\"FR\",tz:\"Europe/Paris\"}",
+    "tagline": "光之城从不睡觉",
+    "keywords": "[\"埃菲尔铁塔\",\"卢浮宫\",\"左岸\",\"美食\"]",
+    "stats": "{annualVisitors:\"5000万\",bestSeason:\"4-6月/9-10月\",unesco:1991}"
+  }
+]

@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="清寰纪行 — 70个世界级目的地的沉浸式人文旅游门户。动态文化主题引擎、便当盒式攻略、杂志级叙事排版。">
+<meta name="theme-color" content="#1a1410">
+<title>清寰纪行 — 世界人文旅游门户</title>
+<link rel="stylesheet" href="css/base.css">
+
+<style>
+  /* ═══ Hub Hero ═══ */
+  .hub-hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: var(--space-2xl) var(--space-md);
+    position: relative;
+  }
+  .hub-hero__bg {
+    position: absolute; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse at 50% 30%, var(--color-surface) 0%, transparent 70%), var(--color-bg);
+  }
+  .hub-hero__particles { position: absolute; inset: 0; z-index: 0; opacity: 0.4; }
+  .hub-hero__content { position: relative; z-index: 1; max-width: 720px; }
+  .hub-hero__title { font-family: var(--font-display); font-size: clamp(2.2rem, 6vw, 5rem); font-weight: 900; line-height: 1.1; letter-spacing: -0.03em; color: var(--color-ink); margin-bottom: var(--space-sm); }
+  .hub-hero__title span { color: var(--color-primary); }
+  .hub-hero__sub { font-size: clamp(1rem, 1.5vw, 1.25rem); color: var(--color-muted); margin-bottom: var(--space-lg); line-height: 1.6; }
+  .hero-search-wrap { width: min(520px, 90vw); position: relative; margin-bottom: var(--space-md); }
+
+  /* ── Search Dropdown ── */
+  .search-dropdown {
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--glass-border);
+    border-radius: 0 0 var(--bento-radius) var(--bento-radius);
+    margin-top: 4px; max-height: 320px; overflow-y: auto;
+    z-index: var(--z-dropdown); display: none;
+    backdrop-filter: blur(var(--glass-blur));
+  }
+  .search-dropdown--visible { display: block; }
+  .search-dropdown__item {
+    padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: background 0.2s; border-bottom: 1px solid var(--glass-border);
+  }
+  .search-dropdown__item:hover, .search-dropdown__item--active { background: var(--color-surface); }
+  .search-dropdown__item:last-child { border-bottom: none; }
+  .search-dropdown__flag { font-size: 1.3rem; flex-shrink: 0; }
+  .search-dropdown__info { flex: 1; text-align: left; }
+  .search-dropdown__name { color: var(--color-ink); font-weight: 600; font-size: 0.95rem; }
+  .search-dropdown__region { color: var(--color-muted); font-size: 0.75rem; }
+  .search-dropdown__hint { padding: 10px 16px; color: var(--color-muted); font-size: 0.78rem; text-align: left; border-bottom: 1px solid var(--glass-border); }
+
+  .hero-stats { display: flex; gap: var(--space-lg); justify-content: center; flex-wrap: wrap; margin-top: var(--space-md); }
+  .hero-stat { text-align: center; }
+  .hero-stat__num { font-family: var(--font-display); font-size: clamp(1.5rem, 2.5vw, 2.2rem); font-weight: 900; color: var(--color-primary); }
+  .hero-stat__label { font-size: 0.75rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* ── Sticky Filter Bar ── */
+  .section-filters {
+    position: sticky; top: 58px; z-index: var(--z-sticky);
+    background: var(--color-bg); padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--glass-blur));
+  }
+  .filter-pill__count {
+    display: inline-block; background: var(--color-surface-elevated);
+    border-radius: 100px; padding: 1px 8px; font-size: 0.7rem;
+    margin-left: 4px; color: var(--color-muted);
+  }
+  .filter-pill--active .filter-pill__count { background: rgba(0,0,0,0.3); color: inherit; }
+
+  /* ── Results Bar ── */
+  .results-header { display: flex; justify-content: space-between; align-items: center; padding: var(--space-md) 0; flex-wrap: wrap; gap: var(--space-sm); }
+  .results-count { color: var(--color-muted); font-size: 0.9rem; }
+  .results-actions { display: flex; gap: var(--space-sm); }
+  .view-toggle { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--color-surface); color: var(--color-muted); cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }
+  .view-toggle--active { background: var(--color-primary); color: #000; border-color: var(--color-primary); }
+
+  /* ── Skeleton Cards ── */
+  .skeleton-card {
+    background: var(--color-surface); border-radius: var(--bento-radius);
+    overflow: hidden; border: 1px solid var(--glass-border);
+  }
+  .skeleton-card__img { width: 100%; aspect-ratio: 16/10; background: var(--color-surface-elevated); animation: shimmer 1.5s infinite; }
+  .skeleton-card__body { padding: var(--space-sm) var(--space-md) var(--space-md); }
+  .skeleton-card__line { height: 12px; border-radius: 6px; background: var(--color-surface-elevated); margin-bottom: 8px; animation: shimmer 1.5s infinite; }
+  .skeleton-card__line--short { width: 60%; }
+  .skeleton-card__line--medium { width: 80%; }
+  @keyframes shimmer {
+    0% { opacity: 0.5; } 50% { opacity: 0.8; } 100% { opacity: 0.5; }
+  }
+
+  /* ── No Results ── */
+  .no-results { grid-column: 1 / -1; text-align: center; padding: var(--space-xl); }
+  .no-results__icon { font-size: 3rem; margin-bottom: var(--space-sm); opacity: 0.6; }
+  .no-results__text { color: var(--color-muted); font-size: 1.1rem; margin-bottom: var(--space-sm); }
+  .no-results__hint { color: var(--color-muted); font-size: 0.85rem; }
+
+  /* ── Featured Destinations Quick Bar ── */
+  .featured-bar { display: flex; gap: var(--space-sm); overflow-x: auto; padding: var(--space-md) 0; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+  .featured-bar::-webkit-scrollbar { height: 2px; }
+  .featured-chip {
+    flex-shrink: 0; scroll-snap-align: start;
+    padding: 10px 20px; border-radius: 100px;
+    background: var(--color-surface); border: 1px solid var(--glass-border);
+    color: var(--color-ink); cursor: pointer; font-size: 0.88rem;
+    transition: all 0.3s; white-space: nowrap; display: flex; align-items: center; gap: 8px;
+  }
+  .featured-chip:hover { border-color: var(--color-primary); transform: translateY(-2px); }
+
+  /* ── Back to Top ── */
+  .back-to-top {
+    position: fixed; bottom: 24px; right: 24px; z-index: var(--z-sticky);
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--color-primary); color: #000; border: none;
+    font-size: 1.2rem; cursor: pointer;
+    opacity: 0; transform: translateY(16px);
+    transition: all 0.3s var(--ease-out-expo);
+    pointer-events: none; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  .back-to-top--visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .back-to-top:hover { transform: translateY(-3px) scale(1.05); }
+
+  /* ── Keyboard hint ── */
+  .kbd { display: inline-block; padding: 2px 7px; border-radius: 4px; background: var(--color-surface-elevated); border: 1px solid var(--glass-border); font-size: 0.7rem; font-family: monospace; color: var(--color-muted); }
+
+  .footer { text-align: center; padding: var(--space-xl) var(--space-md); border-top: 1px solid var(--glass-border); color: var(--color-muted); font-size: 0.85rem; margin-top: var(--space-2xl); }
+  .footer a { color: var(--color-primary); }
+
+  @media (max-width: 480px) {
+    .hub-hero__title { font-size: 1.8rem; }
+    .hero-stats { gap: var(--space-md); }
+    .results-actions { display: none; }
+    .back-to-top { bottom: 16px; right: 16px; width: 38px; height: 38px; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#destinations" class="skip-link">跳转到目的地列表</a>
+<a href="#search-input" class="skip-link" style="left:180px">跳转到搜索</a>
+
+<nav class="nav" aria-label="主导航">
+  <div class="nav__inner">
+    <a href="index.html" class="nav__logo" style="font-size:1.4rem;letter-spacing:0.04em;background:linear-gradient(135deg,var(--color-primary),var(--color-accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">🌐 清寰纪行 <span style="font-size:0.65rem;font-weight:400;-webkit-text-fill-color:var(--color-muted);background:none;margin-left:4px">Lucent Voyage</span></a>
+    <ul class="nav__links">
+      <li><a href="#destinations">目的地</a></li>
+      <li><a href="destination.html?dest=dunhuang">敦煌</a></li>
+      <li><a href="destination.html?dest=kyoto">京都</a></li>
+      <li><a href="destination.html?dest=paris">巴黎</a></li>
+      <li><a href="destination.html?dest=rome">罗马</a></li>
+    </ul>
+    <button class="hamburger" id="hamburger-btn" aria-label="菜单" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Menu Overlay -->
+<div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+  <a href="index.html">🏠 探索中枢</a>
+  <a href="#destinations">🌍 目的地</a>
+  <a href="destination.html?dest=dunhuang">🕌 敦煌</a>
+  <a href="destination.html?dest=kyoto">⛩️ 京都</a>
+  <a href="destination.html?dest=paris">🗼 巴黎</a>
+  <a href="destination.html?dest=new-york">🗽 纽约</a>
+</div>
+
+<!-- Mobile Bottom Tabs -->
+<nav class="mobile-tabs" aria-label="移动端导航">
+  <a href="index.html" class="mobile-tabs__item mobile-tabs__item--active"><span>🏠</span>中枢</a>
+  <a href="#destinations" class="mobile-tabs__item"><span>🌍</span>探索</a>
+  <a href="destination.html?dest=dunhuang" class="mobile-tabs__item"><span>🕌</span>敦煌</a>
+  <a href="destination.html?dest=paris" class="mobile-tabs__item"><span>🗼</span>巴黎</a>
+</nav>
+
+<header class="hub-hero">
+  <div class="hub-hero__bg"></div>
+  <div class="hub-hero__content">
+    <!-- 3D Globe -->
+    <div class="globe-container" style="margin-bottom:var(--space-lg)">
+      <canvas id="globe-canvas" aria-label="3D 交互地球仪，展示 70 个目的地" role="img" style="width:100%;max-width:420px;aspect-ratio:1"></canvas>
+    </div>
+    <h1 class="hub-hero__title" style="background:linear-gradient(135deg,var(--color-primary),var(--color-accent),var(--color-secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">清寰纪行</h1>
+    <p class="hub-hero__sub">70 个世界级目的地，每一次点击触发一场完整的视觉迁徙。<br>点击地球上的光点，探索人文世界。<br><span style="font-size:0.9em;color:var(--color-primary);font-style:italic">—— 龚玉婷 · 清寰纪行</span></p>
+
+    <div class="hero-search-wrap">
+      <div class="search-bar" style="max-width:100%">
+        <span class="search-bar__icon" aria-hidden="true">🔍</span>
+        <input type="search" id="search-input" class="search-bar__input"
+               placeholder="搜索目的地… (按 / 聚焦 · ↑↓ 导航 · Esc 关闭)"
+               aria-label="搜索目的地" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="search-dropdown">
+      </div>
+      <div class="search-dropdown" id="search-dropdown" role="listbox" aria-label="搜索建议"></div>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="hero-stat__num" id="stat-total">70</div><div class="hero-stat__label">目的地</div></div>
+      <div class="hero-stat"><div class="hero-stat__num" id="stat-continents">6</div><div class="hero-stat__label">大洲</div></div>
+      <div class="hero-stat"><div class="hero-stat__num" id="stat-countries">42</div><div class="hero-stat__label">国家/地区</div></div>
+    </div>
+
+    <div style="margin-top:var(--space-sm);color:var(--color-muted);font-size:0.78rem">
+      按 <span class="kbd">/</span> 搜索 · <span class="kbd">Esc</span> 关闭 · <span class="kbd">↑↓</span> 导航建议
+      <button id="random-btn" class="btn btn--ghost" style="margin-left:12px;font-size:0.78rem;padding:6px 16px" aria-label="随机探索一个目的地">🎲 随缘探索</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="section-filters" id="filter-bar">
+    <div class="container">
+      <div id="filter-pills" class="filters" role="group" aria-label="按区域筛选目的地"></div>
+    </div>
+  </div>
+
+  <!-- Featured Quick Access -->
+  <div class="container" style="padding-top:var(--space-md)">
+    <div class="featured-bar" id="featured-bar" aria-label="热门目的地快捷入口"></div>
+  </div>
+
+  <!-- Recently Viewed & Favorites (dynamic, hidden when empty) -->
+  <div id="personal-sections" style="display:none">
+    <div class="container" id="recent-section" style="padding-top:var(--space-md);display:none">
+      <div class="results-header"><span style="color:var(--color-muted);font-size:0.85rem">🕐 最近浏览</span><button class="view-toggle" id="clear-recent" style="font-size:0.7rem" aria-label="清除最近浏览">清除</button></div>
+      <div class="featured-bar" id="recent-bar" aria-label="最近浏览的目的地"></div>
+    </div>
+    <div class="container" id="fav-section" style="padding-top:var(--space-sm);display:none">
+      <div class="results-header"><span style="color:var(--color-muted);font-size:0.85rem">❤️ 我的收藏 (<span id="fav-count">0</span>)</span><button class="view-toggle" id="show-favs" style="font-size:0.7rem">查看全部</button></div>
+      <div class="featured-bar" id="fav-bar" aria-label="收藏的目的地"></div>
+    </div>
+  </div>
+
+  <section id="destinations" class="section" style="padding-top:var(--space-md)">
+    <div class="container">
+      <div class="results-header">
+        <span class="results-count" id="dest-count" aria-live="polite">加载中…</span>
+        <div class="results-actions">
+          <button class="view-toggle view-toggle--active" data-view="grid" aria-label="网格视图" title="网格视图">▦</button>
+          <button class="view-toggle" data-view="list" aria-label="列表视图" title="列表视图">☰</button>
+        </div>
+      </div>
+      <div id="dest-grid" class="dest-grid" role="list" aria-label="目的地列表">
+        <!-- Skeleton loading -->
+        <div class="skeleton-card"><div class="skeleton-card__img"></div><div class="skeleton-card__body"><div class="skeleton-card__line skeleton-card__line--medium"></div><div class="skeleton-card__line skeleton-card__line--short"></div></div></div>
+        <div class="skeleton-card"><div class="skeleton-card__img"></div><div class="skeleton-card__body"><div class="skeleton-card__line skeleton-card__line--medium"></div><div class="skeleton-card__line skeleton-card__line--short"></div></div></div>
+        <div class="skeleton-card"><div class="skeleton-card__img"></div><div class="skeleton-card__body"><div class="skeleton-card__line skeleton-card__line--medium"></div><div class="skeleton-card__line skeleton-card__line--short"></div></div></div>
+        <div class="skeleton-card"><div class="skeleton-card__img"></div><div class="skeleton-card__body"><div class="skeleton-card__line skeleton-card__line--medium"></div><div class="skeleton-card__line skeleton-card__line--short"></div></div></div>
+        <div class="skeleton-card"><div class="skeleton-card__img"></div><div class="skeleton-card__body"><div class="skeleton-card__line skeleton-card__line--medium"></div><div class="skeleton-card__line skeleton-card__line--short"></div></div></div>
+        <div class="skeleton-card"><div class="skeleton-card__img"></div><div class="skeleton-card__body"><div class="skeleton-card__line skeleton-card__line--medium"></div><div class="skeleton-card__line skeleton-card__line--short"></div></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<button class="back-to-top" id="back-to-top" aria-label="回到顶部" title="回到顶部">↑</button>
+
+<footer class="footer">
+  <p style="font-size:0.95rem"><span style="background:linear-gradient(135deg,var(--color-primary),var(--color-accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700">🌐 清寰纪行</span> ・ Lucent Voyage</p>
+  <p style="margin-top:6px;font-size:0.8rem;color:var(--color-muted)">web designer 龚玉婷</p>
+  <p style="margin-top:var(--space-sm)"><a href="destination.html?dest=dunhuang">敦煌</a> · <a href="destination.html?dest=kyoto">京都</a> · <a href="destination.html?dest=paris">巴黎</a> · <a href="destination.html?dest=rome">罗马</a> · <a href="destination.html?dest=new-york">纽约</a> · <a href="destination.html?dest=marrakech">马拉喀什</a> · <a href="destination.html?dest=machu-picchu">马丘比丘</a></p>
+  <p style="margin-top:var(--space-sm);font-size:0.75rem">照片: Unsplash · 天气: Open-Meteo</p>
+</footer>
+
+<script src="js/destinations.js"></script>
+<script src="js/destinations-part2.js"></script>
+<script>
+  window.DESTINATIONS = (window.DESTINATIONS || []).concat(window.DESTINATIONS_PART2 || []);
+</script>
+<script src="js/theme-engine.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/images.js"></script>
+<script src="js/globe-3d.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════
+   Hub Page — Enhanced App Logic
+   ═══════════════════════════════════════════════════ */
+
+const Hub = {
+  _filter: 'all', _query: '', _view: 'grid', _dropdownIdx: -1, _dropdownResults: [],
+
+  init() {
+    if (!window.DESTINATIONS?.length) return;
+    this._renderStats();
+    this._renderFilters();
+    this._renderFeatured();
+    this._renderPersonal();
+    this._renderGrid();
+    this._setupSearch();
+    this._setupViewToggle();
+    this._setupBackToTop();
+    this._setupNavScroll();
+    this._initGlobe();
+    this._setupKeyboard();
+    this._setupMobileMenu();
+    this._setupPersonalActions();
+  },
+
+  /* ── Stats ── */
+  _renderStats() {
+    const all = window.DESTINATIONS;
+    const countries = new Set(all.map(d => d.country));
+    const continents = new Set(all.map(d => d.region?.startsWith('europe') ? 'europe' : d.region));
+    document.getElementById('stat-total').textContent = all.length;
+    document.getElementById('stat-countries').textContent = countries.size;
+  },
+
+  /* ── Filters with counts ── */
+  _renderFilters() {
+    const container = document.getElementById('filter-pills');
+    if (!container) return;
+    const all = window.DESTINATIONS;
+
+    const regions = [
+      { id: 'all', label: '全部', count: all.length },
+      { id: 'east-asia', label: '东亚', count: all.filter(d => /east-asia|central-asia/.test(d.region)).length },
+      { id: 'southeast-asia', label: '东南亚', count: all.filter(d => d.region === 'southeast-asia').length },
+      { id: 'south-asia', label: '南亚', count: all.filter(d => d.region === 'south-asia').length },
+      { id: 'middle-east', label: '中东', count: all.filter(d => d.region === 'middle-east').length },
+      { id: 'europe', label: '欧洲', count: all.filter(d => d.region === 'europe').length },
+      { id: 'americas', label: '美洲', count: all.filter(d => d.region === 'americas').length },
+      { id: 'africa', label: '非洲', count: all.filter(d => d.region === 'africa').length },
+      { id: 'oceania', label: '大洋洲', count: all.filter(d => d.region === 'oceania').length },
+    ];
+
+    // Add favorites filter at the beginning
+    const favCount = window.Storage ? Storage.getFavorites().length : 0;
+
+    container.innerHTML = '';
+    if (favCount > 0) {
+      const favPill = document.createElement('button');
+      favPill.className = 'filter-pill';
+      favPill.innerHTML = '❤️ 收藏 <span class="filter-pill__count">' + favCount + '</span>';
+      favPill.addEventListener('click', () => {
+        this._filter = 'favorites';
+        container.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('filter-pill--active', p === favPill));
+        this._renderGrid();
+      });
+      container.appendChild(favPill);
+    }
+
+    regions.forEach(r => {
+      const pill = document.createElement('button');
+      pill.className = 'filter-pill' + (r.id === 'all' ? ' filter-pill--active' : '');
+      pill.innerHTML = r.label + ' <span class="filter-pill__count">' + r.count + '</span>';
+      pill.setAttribute('aria-pressed', r.id === 'all' ? 'true' : 'false');
+      pill.addEventListener('click', () => {
+        this._filter = r.id;
+        container.querySelectorAll('.filter-pill').forEach(p => {
+          p.classList.toggle('filter-pill--active', p === pill);
+          p.setAttribute('aria-pressed', p === pill ? 'true' : 'false');
+        });
+        this._renderGrid();
+      });
+      container.appendChild(pill);
+    });
+  },
+
+  /* ── Featured Quick Bar ── */
+  _renderFeatured() {
+    const bar = document.getElementById('featured-bar');
+    if (!bar) return;
+    const featured = window.DESTINATIONS.filter(d =>
+      ['dunhuang','kyoto','paris','rome','new-york','machu-picchu','marrakech','santorini','bali','petra'].includes(d.id)
+    );
+    bar.innerHTML = featured.map(d =>
+      '<button class="featured-chip" onclick="window.location.href=\'destination.html?dest=' + d.id + '\'">' +
+        '<span>' + d.flag + '</span>' + d.nameCN + ' <span style="color:var(--color-muted);font-size:0.7rem">' + d.countryCN + '</span>' +
+      '</button>'
+    ).join('');
+  },
+
+  /* ── Grid Rendering ── */
+  _getFiltered() {
+    let list = window.DESTINATIONS || [];
+    if (this._filter === 'favorites') {
+      const favIds = new Set(window.Storage ? Storage.getFavorites() : []);
+      list = list.filter(d => favIds.has(d.id));
+    } else if (this._filter !== 'all') {
+      if (this._filter === 'east-asia') list = list.filter(d => /east-asia|central-asia/.test(d.region));
+      else list = list.filter(d => d.region === this._filter);
+    }
+    if (this._query) {
+      const q = this._query;
+      list = list.filter(d =>
+        (d.nameCN || '').includes(q) || (d.name || '').toLowerCase().includes(q) ||
+        (d.countryCN || '').includes(q) || (d.country || '').toLowerCase().includes(q) ||
+        (d.tagline || '').includes(q) || (d.keywords || []).some(k => k.includes(q))
+      );
+    }
+    return list;
+  },
+
+  _renderGrid() {
+    const grid = document.getElementById('dest-grid');
+    if (!grid) return;
+    const filtered = this._getFiltered();
+
+    // Update count
+    const countEl = document.getElementById('dest-count');
+    if (countEl) {
+      const regionLabel = this._filter === 'all' ? '' : ' · ' + (document.querySelector('.filter-pill--active')?.textContent?.replace(/\d+/, '').trim() || '');
+      countEl.textContent = '共 ' + filtered.length + ' 个目的地' + regionLabel;
+    }
+
+    // No results
+    if (!filtered.length) {
+      grid.innerHTML = '<div class="no-results"><div class="no-results__icon">🔍</div><div class="no-results__text">没有找到匹配的目的地</div><div class="no-results__hint">试试调整搜索词或切换区域筛选</div></div>';
+      return;
+    }
+
+    // Grid/list class
+    grid.className = this._view === 'list' ? 'dest-grid' : 'dest-grid';
+    if (this._view === 'list') grid.style.gridTemplateColumns = '1fr';
+
+    grid.innerHTML = filtered.map((dest, i) => {
+      const isFav = window.Storage ? Storage.isFavorite(dest.id) : false;
+      // Trusted keyword → English name + landmark type for reliable results
+      const kw = encodeURIComponent((dest.keywords||[])[0] || dest.name);
+      const imgUrl = 'https://source.unsplash.com/featured/?' + kw + ',' + encodeURIComponent(dest.name);
+      return '<article class="dest-card" tabindex="0" role="link" aria-label="探索 ' + dest.nameCN + '"' +
+        ' style="animation: heroReveal 0.5s var(--ease-out-expo) ' + (i * 0.03) + 's both"' +
+        ' data-dest-id="' + dest.id + '">' +
+        '<img class="dest-card__image" src="https://picsum.photos/seed/' + dest.id + '/640/360" alt="' + dest.nameCN + '" loading="lazy" onerror="this.src=\'' + AtlasImage.card(dest) + '\'">' +
+        '<span class="dest-card__flag">' + (dest.flag || '') + '</span>' +
+        '<button class="fav-heart' + (isFav ? ' fav-heart--active' : '') + '" data-dest-id="' + dest.id + '" aria-label="' + (isFav ? '取消收藏' : '收藏') + ' ' + dest.nameCN + '" style="position:absolute;top:8px;left:8px;z-index:5;background:none;border:none;font-size:1.3rem;cursor:pointer;filter:' + (isFav ? 'none' : 'grayscale(1)') + ';opacity:' + (isFav ? '1' : '0.5') + ';transition:all 0.3s">' + (isFav ? '❤️' : '🤍') + '</button>' +
+        '<div class="dest-card__body">' +
+          '<div class="dest-card__region">' + (dest.countryCN || '') + ' · ' + this._regionLabel(dest.region) + '</div>' +
+          '<h3 class="dest-card__name">' + dest.nameCN + '</h3>' +
+          '<p class="dest-card__tagline">' + (dest.tagline || '') + '</p>' +
+        '</div>' +
+      '</article>';
+    }).join('');
+
+    // Bind click events — in-place theme switch on hub page
+    grid.querySelectorAll('.dest-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const id = card.dataset.destId;
+        const dest = window.DESTINATIONS.find(d => d.id === id);
+        if (!dest) return;
+        // Apply theme to hub page
+        if (window.ThemeEngine) ThemeEngine.apply(dest);
+        if (window.Storage) Storage.addRecent(id);
+        // Update hero to show selected destination
+        this._showSelectedDest(dest);
+        // Scroll to top to see the transformation
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Try to rotate globe to face destination
+        if (window.Globe3D && Globe3D._ry !== undefined) {
+          const targetRY = -(dest.lng || 0) * Math.PI / 180;
+          Globe3D._ry = targetRY;
+        }
+      });
+      card.addEventListener('keydown', e => { if (e.key === 'Enter') card.click(); });
+    });
+
+    // Bind favorite heart clicks
+    this._bindFavClicks(grid);
+  },
+
+  /* ── Show selected destination in hero ── */
+  _showSelectedDest(dest) {
+    const hero = document.querySelector('.hub-hero__content');
+    if (!hero || !dest) return;
+    // Update hero content to reflect selected destination
+    let selEl = document.getElementById('selected-dest');
+    if (!selEl) {
+      selEl = document.createElement('div');
+      selEl.id = 'selected-dest';
+      selEl.style.cssText = 'margin-top:var(--space-lg);animation:heroReveal 0.6s var(--ease-out-expo) both';
+      hero.appendChild(selEl);
+    }
+    selEl.innerHTML =
+      '<div style="font-size:0.75rem;color:var(--color-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">当前浏览</div>' +
+      '<div style="font-family:var(--font-display);font-size:clamp(1.5rem,3vw,2.5rem);font-weight:900;color:var(--color-primary)">' + (dest.flag || '') + ' ' + dest.nameCN + '</div>' +
+      '<div style="color:var(--color-muted);margin:8px 0;max-width:55ch;margin-inline:auto;line-height:1.6">' + (dest.tagline || '') + '</div>' +
+      '<a href="destination.html?dest=' + dest.id + '" class="btn btn--primary" style="margin-right:8px">查看完整攻略 →</a>' +
+      '<button class="btn btn--ghost" id="clear-selection">✕ 清除</button>';
+
+    document.getElementById('clear-selection')?.addEventListener('click', () => {
+      selEl.remove();
+      // Reset theme to default
+      const dunhuang = window.DESTINATIONS.find(d => d.id === 'dunhuang');
+      if (dunhuang && window.ThemeEngine) ThemeEngine.apply(dunhuang);
+    });
+
+    // Also update the hero background gradient
+    const heroBg = document.querySelector('.hub-hero__bg');
+    if (heroBg && dest.theme) {
+      heroBg.style.background = 'radial-gradient(ellipse at 50% 30%, ' + dest.theme.primary + ' 0%, ' + dest.theme.bg + ' 70%)';
+      heroBg.style.transition = 'background 1s var(--ease-out-expo)';
+    }
+  },
+
+  _bindFavClicks(grid) {
+    if (!window.Storage) return;
+    grid.querySelectorAll('.fav-heart').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const id = btn.dataset.destId;
+        const added = Storage.toggleFavorite(id);
+        btn.textContent = added ? '❤️' : '🤍';
+        btn.style.filter = added ? 'none' : 'grayscale(1)';
+        btn.style.opacity = added ? '1' : '0.5';
+        btn.setAttribute('aria-label', (added ? '取消收藏' : '收藏'));
+        btn.classList.toggle('fav-heart--active', added);
+        this._renderPersonal();
+      });
+    });
+  },
+
+  /* ── Personal Sections ── */
+  _renderPersonal() {
+    const container = document.getElementById('personal-sections');
+    if (!container || !window.Storage) return;
+
+    const recent = Storage.getRecentDestinations();
+    const favs = Storage.getFavoriteDestinations();
+
+    if (!recent.length && !favs.length) return;
+    container.style.display = 'block';
+
+    // Recent
+    if (recent.length) {
+      document.getElementById('recent-section').style.display = 'block';
+      document.getElementById('recent-bar').innerHTML = recent.map(d =>
+        '<button class="featured-chip" onclick="window.location.href=\'destination.html?dest=' + d.id + '\'">' +
+          '<span>' + (d.flag || '') + '</span>' + d.nameCN +
+        '</button>'
+      ).join('');
+    }
+
+    // Favorites
+    if (favs.length) {
+      document.getElementById('fav-section').style.display = 'block';
+      document.getElementById('fav-count').textContent = favs.length;
+      document.getElementById('fav-bar').innerHTML = favs.slice(0, 8).map(d =>
+        '<button class="featured-chip" onclick="window.location.href=\'destination.html?dest=' + d.id + '\'">' +
+          '<span>' + (d.flag || '') + '</span>' + d.nameCN +
+        '</button>'
+      ).join('');
+    }
+  },
+
+  _setupPersonalActions() {
+    // Random button — works directly with DESTINATIONS
+    const randomBtn = document.getElementById('random-btn');
+    if (randomBtn) {
+      randomBtn.addEventListener('click', () => {
+        const all = window.DESTINATIONS;
+        if (all && all.length) {
+          const d = all[Math.floor(Math.random() * all.length)];
+          if (window.ThemeEngine) ThemeEngine.apply(d);
+          if (window.Storage) Storage.addRecent(d.id);
+          window.location.href = 'destination.html?dest=' + d.id;
+        }
+      });
+    }
+
+    // Clear recent
+    const clearBtn = document.getElementById('clear-recent');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (window.Storage) Storage.clearAll();
+        const ps = document.getElementById('personal-sections');
+        if (ps) ps.style.display = 'none';
+      });
+    }
+
+    // Show all favs
+    const showFavs = document.getElementById('show-favs');
+    if (showFavs) {
+      showFavs.addEventListener('click', () => {
+        this._filter = 'favorites';
+        document.querySelectorAll('.filter-pill').forEach(p => {
+          p.classList.toggle('filter-pill--active', p.textContent.includes('收藏'));
+        });
+        this._renderGrid();
+        document.getElementById('destinations').scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+  },
+
+  /* ── Search with Dropdown ── */
+  _setupSearch() {
+    const input = document.getElementById('search-input');
+    const dropdown = document.getElementById('search-dropdown');
+    if (!input || !dropdown) return;
+
+    input.addEventListener('input', () => {
+      this._query = input.value.trim().toLowerCase();
+      this._dropdownIdx = -1;
+      this._updateDropdown();
+      this._renderGrid();
+    });
+
+    input.addEventListener('focus', () => { this._query = input.value.trim().toLowerCase(); this._updateDropdown(); });
+    input.addEventListener('blur', () => { setTimeout(() => dropdown.classList.remove('search-dropdown--visible'), 200); });
+
+    input.addEventListener('keydown', e => {
+      const items = dropdown.querySelectorAll('.search-dropdown__item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        this._dropdownIdx = Math.min(this._dropdownIdx + 1, items.length - 1);
+        this._updateDropdownActive(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        this._dropdownIdx = Math.max(this._dropdownIdx - 1, 0);
+        this._updateDropdownActive(items);
+      } else if (e.key === 'Enter' && this._dropdownIdx >= 0) {
+        e.preventDefault();
+        const active = items[this._dropdownIdx];
+        if (active) active.click();
+      } else if (e.key === 'Escape') {
+        input.value = ''; this._query = ''; this._dropdownIdx = -1;
+        dropdown.classList.remove('search-dropdown--visible');
+        this._renderGrid();
+        input.blur();
+      }
+    });
+  },
+
+  _updateDropdown() {
+    const dropdown = document.getElementById('search-dropdown');
+    const input = document.getElementById('search-input');
+    if (!dropdown || !input) return;
+
+    if (!this._query || this._query.length < 1) {
+      // Show popular choices when empty
+      this._dropdownResults = window.DESTINATIONS?.slice(0, 5) || [];
+    } else {
+      this._dropdownResults = (window.DESTINATIONS || []).filter(d =>
+        (d.nameCN || '').includes(this._query) || (d.name || '').toLowerCase().includes(this._query) ||
+        (d.countryCN || '').includes(this._query)
+      ).slice(0, 8);
+    }
+
+    if (!this._dropdownResults.length) {
+      dropdown.innerHTML = '<div class="search-dropdown__hint">未找到匹配的目的地</div>';
+    } else {
+      dropdown.innerHTML = (this._query ? '' : '<div class="search-dropdown__hint">热门目的地</div>') +
+        this._dropdownResults.map((d, i) =>
+          '<div class="search-dropdown__item" role="option" data-id="' + d.id + '" data-idx="' + i + '">' +
+            '<span class="search-dropdown__flag">' + (d.flag || '🌍') + '</span>' +
+            '<div class="search-dropdown__info">' +
+              '<div class="search-dropdown__name">' + d.nameCN + ' <span style="font-weight:400;color:var(--color-muted)">' + (d.name !== d.nameCN ? d.name : '') + '</span></div>' +
+              '<div class="search-dropdown__region">' + d.countryCN + ' · ' + this._regionLabel(d.region) + '</div>' +
+            '</div>' +
+          '</div>'
+        ).join('');
+    }
+
+    dropdown.classList.add('search-dropdown--visible');
+
+    // Bind clicks
+    dropdown.querySelectorAll('.search-dropdown__item').forEach(item => {
+      item.addEventListener('mousedown', e => {
+        e.preventDefault();
+        const id = item.dataset.id;
+        const dest = window.DESTINATIONS.find(d => d.id === id);
+        if (dest) {
+          if (window.ThemeEngine) ThemeEngine.apply(dest);
+          window.location.href = 'destination.html?dest=' + id;
+        }
+      });
+    });
+  },
+
+  _updateDropdownActive(items) {
+    items.forEach((item, i) => {
+      item.classList.toggle('search-dropdown__item--active', i === this._dropdownIdx);
+      if (i === this._dropdownIdx) item.scrollIntoView({ block: 'nearest' });
+    });
+  },
+
+  /* ── View Toggle ── */
+  _setupViewToggle() {
+    document.querySelectorAll('.view-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this._view = btn.dataset.view;
+        document.querySelectorAll('.view-toggle').forEach(b => b.classList.toggle('view-toggle--active', b === btn));
+        const grid = document.getElementById('dest-grid');
+        if (this._view === 'list') {
+          grid.style.gridTemplateColumns = '1fr';
+          grid.querySelectorAll('.dest-card').forEach(c => c.style.display = 'flex');
+        } else {
+          grid.style.gridTemplateColumns = '';
+          grid.querySelectorAll('.dest-card').forEach(c => c.style.display = '');
+        }
+        this._renderGrid();
+      });
+    });
+  },
+
+  /* ── Back to Top ── */
+  _setupBackToTop() {
+    const btn = document.getElementById('back-to-top');
+    if (!btn) return;
+    window.addEventListener('scroll', () => {
+      btn.classList.toggle('back-to-top--visible', window.scrollY > 600);
+    }, { passive: true });
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  },
+
+  /* ── Nav Scroll ── */
+  _setupNavScroll() {
+    const nav = document.querySelector('.nav');
+    if (!nav) return;
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('nav--scrolled', window.scrollY > 50);
+    }, { passive: true });
+  },
+
+  /* ── 3D Globe ── */
+  _initGlobe() {
+    if (window.Globe3D) {
+      Globe3D.init('globe-canvas', window.DESTINATIONS || []);
+    }
+  },
+
+  /* ── Mobile Menu ── */
+  _setupMobileMenu() {
+    const btn = document.getElementById('hamburger-btn');
+    const menu = document.getElementById('mobile-menu');
+    if (!btn || !menu) return;
+
+    btn.addEventListener('click', () => {
+      const open = menu.classList.toggle('mobile-menu--open');
+      btn.classList.toggle('hamburger--open', open);
+      btn.setAttribute('aria-expanded', open);
+      menu.setAttribute('aria-hidden', !open);
+      document.body.style.overflow = open ? 'hidden' : '';
+    });
+
+    // Close on link click
+    menu.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        menu.classList.remove('mobile-menu--open');
+        btn.classList.remove('hamburger--open');
+        btn.setAttribute('aria-expanded', 'false');
+        menu.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      });
+    });
+  },
+
+  /* ── Keyboard Shortcuts ── */
+  _setupKeyboard() {
+    document.addEventListener('keydown', e => {
+      if (e.key === '/' && document.activeElement === document.body) {
+        e.preventDefault();
+        document.getElementById('search-input')?.focus();
+      }
+    });
+  },
+
+  _regionLabel(r) {
+    const map = {
+      'east-asia': '东亚', 'central-asia': '中亚', 'southeast-asia': '东南亚',
+      'south-asia': '南亚', 'middle-east': '中东', 'europe': '欧洲',
+      'americas': '美洲', 'africa': '非洲', 'oceania': '大洋洲'
+    };
+    return map[r] || r || '';
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => Hub.init());
+</script>
+</body>
+</html>
